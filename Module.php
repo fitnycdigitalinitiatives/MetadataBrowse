@@ -207,7 +207,13 @@ class Module extends AbstractModule
                     $isURI = true;
                     break;
                 case 'literal':
-                    $searchTarget = $target->value();
+                  $value = $target->value();
+                    if (strpos($value, '[') !== false) {
+                      $explode = explode("[", $value);
+                      $searchTarget = trim($explode[0]);
+                    } else {
+                      $searchTarget = $target->value();
+                    }
                     $searchUrl = $this->literalSearchUrl($url, $routeParams, $propertyId, $searchTarget);
                     $isLiteral = true;
                     break;
@@ -239,11 +245,26 @@ class Module extends AbstractModule
             }
             $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
             if($globalSettings->get('metadata_browse_direct_links') && $isLiteral == true){
+              $cleanedValue = nl2br($escape($target->value()));
+              if (strpos($cleanedValue, '[') !== false) {
+                $explode = explode("[", $cleanedValue);
+                $name = trim($explode[0]);
+                $role = $explode[1];
+                $role = trim($role, "]");
+                $html = $name . " (" . $role . ")";
+              }
                 $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
                 $event->setParam('html', $link);
             } elseif($globalSettings->get('metadata_browse_direct_links') && $isURI == true){
                 $uri = $target->uri();
                 $uriLabel = $target->value();
+                if (strpos($uriLabel, '[') !== false) {
+                  $explode = explode("[", $uriLabel);
+                  $name = trim($explode[0]);
+                  $role = $explode[1];
+                  $role = trim($role, "]");
+                  $uriLabel = $name . " (" . $role . ")";
+                }
                 if (filter_var($uri, FILTER_VALIDATE_URL)) {
                     if (!$uriLabel) {
                         $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
@@ -271,7 +292,7 @@ class Module extends AbstractModule
               $routeParams,
               ['query' => ['Search' => '',
                                      'property[0][property]' => $propertyId,
-                                     'property[0][type]' => 'eq',
+                                     'property[0][type]' => 'in',
                                      'property[0][text]' => $searchTarget,
                            ],
                       ]
