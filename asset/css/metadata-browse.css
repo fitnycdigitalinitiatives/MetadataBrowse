@@ -1,16 +1,28 @@
 #metadata-browse-properties .field.delete {
-    background-color: #fcc;
+  background-color: #fcc;
 }
 
-#metadata-browse-properties .collapse + .collapsible {
-    margin-top: .5em;
+#metadata-browse-properties .collapse+.collapsible {
+  margin-top: .5em;
 }
 
 #metadata-browse-properties .restore-property {
-    display: none;
+  display: none;
 }
 
 a.metadata-browse-link {
-    font-size: 75%;
-    display: block !important;
+  font-size: 75%;
+  display: block !important;
+}
+
+a.metadata-browse-direct-link {
+  margin-left: .5em;
+}
+
+a.uri-value-link.info {
+  margin-left: .5em;
+}
+
+.property .value.uri a.uri-value-link.info:after {
+  content: none;
 }

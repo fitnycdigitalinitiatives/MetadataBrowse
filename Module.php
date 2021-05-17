@@ -195,6 +195,7 @@ class Module extends AbstractModule
             $params = $event->getParams();
             $html = $params['html'];
             $isLiteral = false;
+            $isURI = false;
             switch ($target->type()) {
                 case 'resource':
                     $searchTarget = $target->valueResource()->id();
@@ -203,6 +204,7 @@ class Module extends AbstractModule
                 case 'uri':
                     $searchTarget = $target->uri();
                     $searchUrl = $this->uriSearchUrl($url, $routeParams, $propertyId, $searchTarget);
+                    $isURI = true;
                     break;
                 case 'literal':
                     $searchTarget = $target->value();
@@ -236,8 +238,23 @@ class Module extends AbstractModule
                 break;
             }
             $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-            if ($globalSettings->get('metadata_browse_direct_links') && $isLiteral == true) {
-                $link = "<a class='metadata-browse-direct-link' href='$searchUrl'>" . $html . "</a>";
+            if($globalSettings->get('metadata_browse_direct_links') && $isLiteral == true){
+                $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
+                $event->setParam('html', $link);
+            } elseif($globalSettings->get('metadata_browse_direct_links') && $isURI == true){
+                $uri = $target->uri();
+                $uriLabel = $target->value();
+                if (filter_var($uri, FILTER_VALIDATE_URL)) {
+                    if (!$uriLabel) {
+                        $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
+                    }
+                    else {
+                      $link = $uriLabel . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>
+                      <a class='uri-value-link info' target='_blank' href='$uri'><i class='fas fa-info-circle' title='Source URI'><span class='sr-only'>Source URI</span></i></a>";
+                    }
+                } else {
+                    $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
+                }
                 $event->setParam('html', $link);
             } else {
                 $text = sprintf($translator->translate('See all %s with this value'), $translator->translate($controllerLabel));
