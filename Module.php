@@ -75,14 +75,17 @@ class Module extends AbstractModule
         $sharedEventManager->attach(
                 'Omeka\Api\Representation\ValueRepresentation',
                 'rep.value.html',
-                [$this, 'repValueHtml']
+                [$this, 'repValueHtml'],
+                100
                 );
 
         $triggerIdentifiers = [
                 'Omeka\Controller\Admin\Item',
                 'Omeka\Controller\Admin\ItemSet',
+                'Omeka\Controller\Admin\Media',
                 'Omeka\Controller\Site\Item',
                 'Omeka\Controller\Site\ItemSet',
+                'Omeka\Controller\Site\Media',
                 ];
         foreach ($triggerIdentifiers as $identifier) {
             $sharedEventManager->attach(
@@ -196,10 +199,12 @@ class Module extends AbstractModule
             $html = $params['html'];
             $isLiteral = false;
             $isURI = false;
+            $isResource = false;
             switch ($target->type()) {
                 case 'resource':
                     $searchTarget = $target->valueResource()->id();
                     $searchUrl = $this->resourceSearchUrl($url, $routeParams, $propertyId, $searchTarget);
+                    $isResource = true;
                     break;
                 case 'uri':
                     $searchTarget = $target->uri();
@@ -207,13 +212,7 @@ class Module extends AbstractModule
                     $isURI = true;
                     break;
                 case 'literal':
-                  $value = $target->value();
-                    if (strpos($value, '[') !== false) {
-                      $explode = explode("[", $value);
-                      $searchTarget = trim($explode[0]);
-                    } else {
-                      $searchTarget = $target->value();
-                    }
+                    $searchTarget = $target->value();
                     $searchUrl = $this->literalSearchUrl($url, $routeParams, $propertyId, $searchTarget);
                     $isLiteral = true;
                     break;
@@ -246,25 +245,11 @@ class Module extends AbstractModule
             $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
             if($globalSettings->get('metadata_browse_direct_links') && $isLiteral == true){
               $cleanedValue = nl2br($escape($target->value()));
-              if (strpos($cleanedValue, '[') !== false) {
-                $explode = explode("[", $cleanedValue);
-                $name = trim($explode[0]);
-                $role = $explode[1];
-                $role = trim($role, "]");
-                $html = $name . " (" . $role . ")";
-              }
                 $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
                 $event->setParam('html', $link);
             } elseif($globalSettings->get('metadata_browse_direct_links') && $isURI == true){
                 $uri = $target->uri();
                 $uriLabel = $target->value();
-                if (strpos($uriLabel, '[') !== false) {
-                  $explode = explode("[", $uriLabel);
-                  $name = trim($explode[0]);
-                  $role = $explode[1];
-                  $role = trim($role, "]");
-                  $uriLabel = $name . " (" . $role . ")";
-                }
                 if (filter_var($uri, FILTER_VALIDATE_URL)) {
                     if (!$uriLabel) {
                         $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
@@ -277,7 +262,29 @@ class Module extends AbstractModule
                     $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
                 }
                 $event->setParam('html', $link);
-            } else {
+            } elseif ($globalSettings->get('metadata_browse_direct_links') && $isResource == true) {
+                $thumbnail = $this->getServiceLocator()->get('ViewHelperManager')->get('thumbnail');
+                $resourceLink = $target->valueResource()->url();
+                $link = sprintf(
+                  '<div class="resource-metadata-browse">
+                    <span class="resource-name">
+                      %s
+                    </span>
+                    <a class="resource-link cube" href="%s">
+                      %s
+                      <i class="fas fa-cube" title="Linked Resource"><span class="sr-only">Linked Resource</span></i>
+                    </a>
+                    <a class="metadata-browse-direct-link" href="%s"><i class="fas fa-search" title="Search by this term"><span class="sr-only">Search by this term</span></i></a>
+                  </div>',
+                  $escape($target->valueResource()->displayTitle()),
+                  $resourceLink,
+                  $thumbnail($target->valueResource(), 'square'),
+                  $resourceLink,
+                  $searchUrl
+                );
+                $event->setParam('html', $link);
+            }
+            else {
                 $text = sprintf($translator->translate('See all %s with this value'), $translator->translate($controllerLabel));
                 $searchUrl = $escape($searchUrl);
                 $link = "<a class='metadata-browse-link' href='$searchUrl'>$text</a>";
@@ -292,7 +299,7 @@ class Module extends AbstractModule
               $routeParams,
               ['query' => ['Search' => '',
                                      'property[0][property]' => $propertyId,
-                                     'property[0][type]' => 'in',
+                                     'property[0][type]' => 'eq',
                                      'property[0][text]' => $searchTarget,
                            ],
                       ]
