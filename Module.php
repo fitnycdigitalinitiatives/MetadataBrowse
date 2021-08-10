@@ -153,6 +153,7 @@ class Module extends AbstractModule
     {
         $target = $event->getTarget();
         $propertyId = $target->property()->id();
+        $propertyTerm = $target->property()->term();
 
         $routeMatch = $this->getServiceLocator()->get('Application')
                         ->getMvcEvent()->getRouteMatch();
@@ -191,6 +192,10 @@ class Module extends AbstractModule
         $url = $this->getServiceLocator()->get('ViewHelperManager')->get('Url');
         $escape = $this->getServiceLocator()->get('ViewHelperManager')->get('escapeHtml');
         if (in_array($propertyId, $filteredPropertyIds)) {
+          // Only apply links to Rights fields that are uri's, so descriptive rights fields are not searchable
+          if (($propertyTerm == "dcterms:rights") && ($target->type() == "literal")) {
+            return;
+          }
             $controllerName = $target->resource()->getControllerName();
             $routeParams['controller'] = $controllerName;
 
