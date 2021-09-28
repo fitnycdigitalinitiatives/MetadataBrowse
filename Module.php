@@ -183,8 +183,8 @@ class Module extends AbstractModule
             $siteSettings = $this->getServiceLocator()->get('Omeka\Settings\Site');
             $filteredPropertyIds = $siteSettings->get('metadata_browse_properties', []);
             $siteSlug = $routeMatch->getParam('site-slug');
-            $routeParams['route'] = 'site';
-            $routeParams['site-slug'] = $siteSlug . '/' . $target->resource()->getControllerName();
+            $routeParams['route'] = 'site/resource';
+            $routeParams['site-slug'] = $siteSlug;
         } else {
             return;
         }
