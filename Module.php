@@ -247,9 +247,10 @@ class Module extends AbstractModule
                     $controllerLabel = $controllerName;
                 break;
             }
+            $searchUrl = $escape($searchUrl);
             $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
             if($globalSettings->get('metadata_browse_direct_links') && $isLiteral == true){
-              $cleanedValue = nl2br($escape($target->value()));
+                $cleanedValue = nl2br($escape($target->value()));
                 $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
                 $event->setParam('html', $link);
             } elseif($globalSettings->get('metadata_browse_direct_links') && $isURI == true){
@@ -291,7 +292,6 @@ class Module extends AbstractModule
             }
             else {
                 $text = sprintf($translator->translate('See all %s with this value'), $translator->translate($controllerLabel));
-                $searchUrl = $escape($searchUrl);
                 $link = "<a class='metadata-browse-link' href='$searchUrl'>$text</a>";
                 $event->setParam('html', "$html $link");
             }
