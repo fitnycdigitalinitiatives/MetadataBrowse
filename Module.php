@@ -251,21 +251,21 @@ class Module extends AbstractModule
             $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
             if($globalSettings->get('metadata_browse_direct_links') && $isLiteral == true){
                 $cleanedValue = nl2br($escape($target->value()));
-                $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
+                $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
                 $event->setParam('html', $link);
             } elseif($globalSettings->get('metadata_browse_direct_links') && $isURI == true){
                 $uri = $target->uri();
                 $uriLabel = $target->value();
                 if (filter_var($uri, FILTER_VALIDATE_URL)) {
                     if (!$uriLabel) {
-                        $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
+                        $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
                     }
                     else {
-                      $link = $uriLabel . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>
-                      <a class='uri-value-link info' target='_blank' href='$uri'><i class='fas fa-info-circle' title='Source URI'><span class='sr-only'>Source URI</span></i></a>";
+                      $link = $uriLabel . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>
+                      <a class='uri-value-link info' target='_blank' href='$uri' aria-label='Source URI'><i class='fas fa-info-circle' title='Source URI'  aria-hidden='true'></i></a>";
                     }
                 } else {
-                    $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl'><i class='fas fa-search' title='Search by this term'><span class='sr-only'>Search by this term</span></i></a>";
+                    $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
                 }
                 $event->setParam('html', $link);
             } elseif ($globalSettings->get('metadata_browse_direct_links') && $isResource == true) {
@@ -276,11 +276,11 @@ class Module extends AbstractModule
                     <span class="resource-name">
                       %s
                     </span>
-                    <a class="resource-link cube" href="%s">
+                    <a class="resource-link cube" href="%s" aria-label="Linked Resource">
                       %s
                       <i class="fas fa-cube" title="Linked Resource"><span class="sr-only">Linked Resource</span></i>
                     </a>
-                    <a class="metadata-browse-direct-link" href="%s"><i class="fas fa-search" title="Search by this term"><span class="sr-only">Search by this term</span></i></a>
+                    <a class="metadata-browse-direct-link" href="%s" aria-label="Search by this term"><i class="fas fa-search" title="Search by this term"  aria-hidden="true"></i></a>
                   </div>',
                   $escape($target->valueResource()->displayTitle()),
                   $resourceLink,
