@@ -213,7 +213,8 @@ class Module extends AbstractModule
                     break;
                 case 'uri':
                     $searchTarget = $target->uri();
-                    $searchUrl = $this->uriSearchUrl($url, $routeParams, $propertyId, $searchTarget);
+                    $label = $target->value();
+                    $searchUrl = $this->uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label);
                     $isURI = true;
                     break;
                 case 'literal':
@@ -261,7 +262,7 @@ class Module extends AbstractModule
                         $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
                     }
                     else {
-                      $link = $uriLabel . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>
+                      $link = $escape($uriLabel) . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>
                       <a class='uri-value-link info' target='_blank' href='$uri' aria-label='Source URI'><i class='fas fa-info-circle' title='Source URI'  aria-hidden='true'></i></a>";
                     }
                 } else {
@@ -313,7 +314,7 @@ class Module extends AbstractModule
         return $searchUrl;
     }
 
-    protected function uriSearchUrl($url, $routeParams, $propertyId, $searchTarget)
+    protected function uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label)
     {
         $searchUrl = $url($routeParams['route'],
               $routeParams,
@@ -321,6 +322,7 @@ class Module extends AbstractModule
                     'property[0][property]' => $propertyId,
                     'property[0][type]' => 'eq',
                     'property[0][text]' => $searchTarget,
+                    'property[0][label]' => $label,
                 ],
             ]
           );

@@ -81,4 +81,9 @@ return [
             ],
         ],
     ],
+    'view_helpers' => [
+      'invokables' => [
+          'searchFilters' => MetadataBrowse\View\Helper\MetadataBrowseSearchFilters::class,
+      ],
+    ],
 ];
