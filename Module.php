@@ -163,6 +163,7 @@ class Module extends AbstractModule
                 'action' => 'browse',
         ];
         if ($routeMatch->getParam('__ADMIN__')) {
+            $isSite = false;
             $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
             if ($globalSettings->get('metadata_browse_use_globals')) {
                 $filteredPropertyIds = $globalSettings->get('metadata_browse_properties', []);
@@ -180,6 +181,7 @@ class Module extends AbstractModule
 
             $routeParams['route'] = 'admin/default';
         } elseif ($routeMatch->getParam('__SITE__')) {
+            $isSite = true;
             $siteSettings = $this->getServiceLocator()->get('Omeka\Settings\Site');
             $filteredPropertyIds = $siteSettings->get('metadata_browse_properties', []);
             $siteSlug = $routeMatch->getParam('site-slug');
@@ -214,12 +216,12 @@ class Module extends AbstractModule
                 case 'uri':
                     $searchTarget = $target->uri();
                     $label = $target->value();
-                    $searchUrl = $this->uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label);
+                    $searchUrl = $this->uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label, $isSite);
                     $isURI = true;
                     break;
                 case 'literal':
                     $searchTarget = $target->value();
-                    $searchUrl = $this->literalSearchUrl($url, $routeParams, $propertyId, $searchTarget);
+                    $searchUrl = $this->literalSearchUrl($url, $routeParams, $propertyId, $searchTarget, $isSite);
                     $isLiteral = true;
                     break;
                 default:
@@ -299,8 +301,13 @@ class Module extends AbstractModule
         }
     }
 
-    protected function literalSearchUrl($url, $routeParams, $propertyId, $searchTarget)
+    protected function literalSearchUrl($url, $routeParams, $propertyId, $searchTarget, $isSite = "")
     {
+      //Check if Solr Search is installed and if this is a request from a site
+      if (($this->getServiceLocator()->get('ViewHelperManager')->has('getSearchFormForSite')) && $isSite) {
+        $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'suggester' => 'true']], true);
+        return $searchUrl;
+      } else {
         $searchUrl = $url($routeParams['route'],
               $routeParams,
               ['query' => ['Search' => '',
@@ -312,22 +319,33 @@ class Module extends AbstractModule
           );
 
         return $searchUrl;
+      }
+
+
     }
 
-    protected function uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label)
+    protected function uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label = "", $isSite = "")
     {
-        $searchUrl = $url($routeParams['route'],
-              $routeParams,
-                ['query' => ['Search' => '',
-                    'property[0][property]' => $propertyId,
-                    'property[0][type]' => 'eq',
-                    'property[0][text]' => $searchTarget,
-                    'property[0][label]' => $label,
-                ],
-            ]
-          );
+        //Check if Solr Search is installed and if this is a request from a site
+        if (($this->getServiceLocator()->get('ViewHelperManager')->has('getSearchFormForSite')) && $isSite) {
+          $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'label' => $label, 'suggester' => 'true']], true);
+          return $searchUrl;
+        } else {
+          $searchUrl = $url($routeParams['route'],
+                $routeParams,
+                  ['query' => ['Search' => '',
+                      'property[0][property]' => $propertyId,
+                      'property[0][type]' => 'eq',
+                      'property[0][text]' => $searchTarget,
+                      'property[0][label]' => $label,
+                  ],
+              ]
+            );
 
-        return $searchUrl;
+          return $searchUrl;
+        }
+
+
     }
 
     protected function resourceSearchUrl($url, $routeParams, $propertyId, $searchTarget)
