@@ -152,6 +152,10 @@ class Module extends AbstractModule
     public function repValueHtml($event)
     {
         $target = $event->getTarget();
+        $controllerName = $target->resource()->getControllerName();
+        if (!$controllerName) {
+            return;
+        }
         $propertyId = $target->property()->id();
         $propertyTerm = $target->property()->term();
 
@@ -198,7 +202,6 @@ class Module extends AbstractModule
           if (($propertyTerm == "dcterms:rights") && ($target->type() == "literal")) {
             return;
           }
-            $controllerName = $target->resource()->getControllerName();
             $routeParams['controller'] = $controllerName;
 
             $translator = $this->getServiceLocator()->get('MvcTranslator');
