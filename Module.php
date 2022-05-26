@@ -234,10 +234,13 @@ class Module extends AbstractModule
                         $searchTarget = $target->valueResource()->id();
                         $searchUrl = $this->resourceSearchUrl($url, $routeParams, $propertyId, $searchTarget);
                     } elseif ($uri) {
-                        $searchUrl = $this->uriSearchUrl($url, $routeParams, $propertyId, $uri);
+                        $searchTarget = $target->uri();
+                        $label = $target->value();
+                        $searchUrl = $this->uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label, $isSite);
+                        $isURI = true;
                     } else {
                         $searchTarget = $target->value();
-                        $searchUrl = $this->literalSearchUrl($url, $routeParams, $propertyId, $searchTarget);
+                        $searchUrl = $this->literalSearchUrl($url, $routeParams, $propertyId, $searchTarget, $isSite);
                         $isLiteral = true;
                     }
             }
