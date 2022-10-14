@@ -310,7 +310,7 @@ class Module extends AbstractModule
     protected function literalSearchUrl($url, $routeParams, $propertyId, $searchTarget, $isSite = "")
     {
       //Check if Solr Search is installed and if this is a request from a site
-      if (($this->getServiceLocator()->get('ViewHelperManager')->has('getSearchFormForSite')) && $isSite) {
+      if ($isSite && $this->checkSolr($routeParams)) {
         $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'suggester' => 'true']], true);
         return $searchUrl;
       } else {
@@ -333,7 +333,7 @@ class Module extends AbstractModule
     protected function uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label = "", $isSite = "")
     {
         //Check if Solr Search is installed and if this is a request from a site
-        if (($this->getServiceLocator()->get('ViewHelperManager')->has('getSearchFormForSite')) && $isSite) {
+        if ($isSite && $this->checkSolr($routeParams)) {
           $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'label' => $label, 'suggester' => 'true']], true);
           return $searchUrl;
         } else {
@@ -367,5 +367,24 @@ class Module extends AbstractModule
           );
 
         return $searchUrl;
+    }
+    protected function checkSolr($routeParams) {
+      // check if solr is installed
+      if ($this->getServiceLocator()->get('ViewHelperManager')->has('getSearchFormForSite')) {
+        if ($routeParams['site-slug']) {
+          $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+          $sites = $api->search('sites', ['slug' => $routeParams['site-slug']])->getContent();
+          $searchPages = $api->search('search_pages')->getContent();
+          foreach ($sites as $site) {
+            $currentSiteID = $site->id();
+            foreach ($searchPages as $searchPage) {
+                if ($currentSiteID == $searchPage->index()->settings()['site']) {
+                    return true;
+                }
+            }
+          }
+        }
+      }
+      return false;
     }
 }
