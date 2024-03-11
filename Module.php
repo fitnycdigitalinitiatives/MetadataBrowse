@@ -25,7 +25,7 @@ class Module extends AbstractModule
                 Acl::ROLE_SITE_ADMIN,
             ],
             ['MetadataBrowse\Controller\Admin\Index']
-            );
+        );
     }
 
     public function uninstall(ServiceLocatorInterface $serviceLocator)
@@ -73,20 +73,20 @@ class Module extends AbstractModule
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $sharedEventManager->attach(
-                'Omeka\Api\Representation\ValueRepresentation',
-                'rep.value.html',
-                [$this, 'repValueHtml'],
-                100
-                );
+            'Omeka\Api\Representation\ValueRepresentation',
+            'rep.value.html',
+            [$this, 'repValueHtml'],
+            100
+        );
 
         $triggerIdentifiers = [
-                'Omeka\Controller\Admin\Item',
-                'Omeka\Controller\Admin\ItemSet',
-                'Omeka\Controller\Admin\Media',
-                'Omeka\Controller\Site\Item',
-                'Omeka\Controller\Site\ItemSet',
-                'Omeka\Controller\Site\Media',
-                ];
+            'Omeka\Controller\Admin\Item',
+            'Omeka\Controller\Admin\ItemSet',
+            'Omeka\Controller\Admin\Media',
+            'Omeka\Controller\Site\Item',
+            'Omeka\Controller\Site\ItemSet',
+            'Omeka\Controller\Site\Media',
+        ];
         foreach ($triggerIdentifiers as $identifier) {
             $sharedEventManager->attach(
                 $identifier,
@@ -160,11 +160,11 @@ class Module extends AbstractModule
         $propertyTerm = $target->property()->term();
 
         $routeMatch = $this->getServiceLocator()->get('Application')
-                        ->getMvcEvent()->getRouteMatch();
+            ->getMvcEvent()->getRouteMatch();
         $routeMatchParams = $routeMatch->getParams();
         //setup the route params to pass to the Url helper. Both the route name and its parameters go here
         $routeParams = [
-                'action' => 'browse',
+            'action' => 'browse',
         ];
         if ($routeMatch->getParam('__ADMIN__')) {
             $isSite = false;
@@ -198,10 +198,10 @@ class Module extends AbstractModule
         $url = $this->getServiceLocator()->get('ViewHelperManager')->get('Url');
         $escape = $this->getServiceLocator()->get('ViewHelperManager')->get('escapeHtml');
         if (in_array($propertyId, $filteredPropertyIds)) {
-          // Only apply links to Rights fields that are uri's, so descriptive rights fields are not searchable
-          if (($propertyTerm == "dcterms:rights") && ($target->type() == "literal")) {
-            return;
-          }
+            // Only apply links to Rights fields that are uri's, so descriptive rights fields are not searchable
+            if (($propertyTerm == "dcterms:rights") && ($target->type() == "literal")) {
+                return;
+            }
             $routeParams['controller'] = $controllerName;
 
             $translator = $this->getServiceLocator()->get('MvcTranslator');
@@ -248,29 +248,28 @@ class Module extends AbstractModule
             switch ($controllerName) {
                 case 'item':
                     $controllerLabel = 'items';
-                break;
+                    break;
                 case 'item-set':
                     $controllerLabel = 'item sets';
-                break;
+                    break;
                 default:
                     $controllerLabel = $controllerName;
-                break;
+                    break;
             }
             $searchUrl = $escape($searchUrl);
             $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-            if($globalSettings->get('metadata_browse_direct_links') && $isLiteral == true){
+            if ($globalSettings->get('metadata_browse_direct_links') && $isLiteral == true) {
                 $cleanedValue = nl2br($escape($target->value()));
                 $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
                 $event->setParam('html', $link);
-            } elseif($globalSettings->get('metadata_browse_direct_links') && $isURI == true){
+            } elseif ($globalSettings->get('metadata_browse_direct_links') && $isURI == true) {
                 $uri = $target->uri();
                 $uriLabel = $target->value();
                 if (filter_var($uri, FILTER_VALIDATE_URL)) {
                     if (!$uriLabel) {
                         $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
-                    }
-                    else {
-                      $link = $escape($uriLabel) . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>
+                    } else {
+                        $link = $escape($uriLabel) . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>
                       <a class='uri-value-link info' target='_blank' href='$uri' aria-label='Source URI'><i class='fas fa-info-circle' title='Source URI'  aria-hidden='true'></i></a>";
                     }
                 } else {
@@ -281,7 +280,7 @@ class Module extends AbstractModule
                 $thumbnail = $this->getServiceLocator()->get('ViewHelperManager')->get('thumbnail');
                 $resourceLink = $target->valueResource()->url();
                 $link = sprintf(
-                  '<div class="resource-metadata-browse">
+                    '<div class="resource-metadata-browse">
                     <span class="resource-name">
                       %s
                     </span>
@@ -291,15 +290,14 @@ class Module extends AbstractModule
                     </a>
                     <a class="metadata-browse-direct-link" href="%s" aria-label="Search by this term"><i class="fas fa-search" title="Search by this term"  aria-hidden="true"></i></a>
                   </div>',
-                  $escape($target->valueResource()->displayTitle()),
-                  $resourceLink,
-                  $thumbnail($target->valueResource(), 'square'),
-                  $resourceLink,
-                  $searchUrl
+                    $escape($target->valueResource()->displayTitle()),
+                    $resourceLink,
+                    $thumbnail($target->valueResource(), 'square'),
+                    $resourceLink,
+                    $searchUrl
                 );
                 $event->setParam('html', $link);
-            }
-            else {
+            } else {
                 $text = sprintf($translator->translate('See all %s with this value'), $translator->translate($controllerLabel));
                 $link = "<a class='metadata-browse-link' href='$searchUrl'>$text</a>";
                 $event->setParam('html', "$html $link");
@@ -309,23 +307,26 @@ class Module extends AbstractModule
 
     protected function literalSearchUrl($url, $routeParams, $propertyId, $searchTarget, $isSite = "")
     {
-      //Check if Solr Search is installed and if this is a request from a site
-      if ($isSite && $this->checkSolr($routeParams)) {
-        $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'suggester' => 'true']], true);
-        return $searchUrl;
-      } else {
-        $searchUrl = $url($routeParams['route'],
-              $routeParams,
-              ['query' => ['Search' => '',
-                                     'property[0][property]' => $propertyId,
-                                     'property[0][type]' => 'eq',
-                                     'property[0][text]' => $searchTarget,
-                           ],
-                      ]
-          );
+        //Check if Solr Search is installed and if this is a request from a site
+        if ($isSite && $this->checkSolr($routeParams)) {
+            $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'suggester' => 'true']], true);
+            return $searchUrl;
+        } else {
+            $searchUrl = $url(
+                $routeParams['route'],
+                $routeParams,
+                [
+                    'query' => [
+                        'Search' => '',
+                        'property[0][property]' => $propertyId,
+                        'property[0][type]' => 'eq',
+                        'property[0][text]' => $searchTarget,
+                    ],
+                ]
+            );
 
-        return $searchUrl;
-      }
+            return $searchUrl;
+        }
 
 
     }
@@ -334,21 +335,24 @@ class Module extends AbstractModule
     {
         //Check if Solr Search is installed and if this is a request from a site
         if ($isSite && $this->checkSolr($routeParams)) {
-          $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'label' => $label, 'suggester' => 'true']], true);
-          return $searchUrl;
+            $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'label' => $label, 'suggester' => 'true']], true);
+            return $searchUrl;
         } else {
-          $searchUrl = $url($routeParams['route'],
+            $searchUrl = $url(
+                $routeParams['route'],
                 $routeParams,
-                  ['query' => ['Search' => '',
-                      'property[0][property]' => $propertyId,
-                      'property[0][type]' => 'eq',
-                      'property[0][text]' => $searchTarget,
-                      'property[0][label]' => $label,
-                  ],
-              ]
+                [
+                    'query' => [
+                        'Search' => '',
+                        'property[0][property]' => $propertyId,
+                        'property[0][type]' => 'eq',
+                        'property[0][text]' => $searchTarget,
+                        'property[0][label]' => $label,
+                    ],
+                ]
             );
 
-          return $searchUrl;
+            return $searchUrl;
         }
 
 
@@ -356,35 +360,36 @@ class Module extends AbstractModule
 
     protected function resourceSearchUrl($url, $routeParams, $propertyId, $searchTarget)
     {
-        $searchUrl = $url($routeParams['route'],
-              $routeParams,
-            ['query' => ['Search' => '',
-                'property[0][property]' => $propertyId,
-                'property[0][type]' => 'res',
-                'property[0][text]' => $searchTarget,
-            ],
+        $searchUrl = $url(
+            $routeParams['route'],
+            $routeParams,
+            [
+                'query' => [
+                    'Search' => '',
+                    'property[0][property]' => $propertyId,
+                    'property[0][type]' => 'res',
+                    'property[0][text]' => $searchTarget,
+                ],
             ]
-          );
+        );
 
         return $searchUrl;
     }
-    protected function checkSolr($routeParams) {
-      // check if solr is installed
-      if ($this->getServiceLocator()->get('ViewHelperManager')->has('getSearchFormForSite')) {
-        if ($routeParams['site-slug']) {
-          $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-          $sites = $api->search('sites', ['slug' => $routeParams['site-slug']])->getContent();
-          $searchPages = $api->search('search_pages')->getContent();
-          foreach ($sites as $site) {
-            $currentSiteID = $site->id();
-            foreach ($searchPages as $searchPage) {
-                if ($currentSiteID == $searchPage->index()->settings()['site']) {
-                    return true;
+    protected function checkSolr($routeParams)
+    {
+        // check if solr is installed
+        if ($this->getServiceLocator()->get('ViewHelperManager')->has('getSearchFormForSite')) {
+            if ($routeParams['site-slug']) {
+                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+                $sites = $api->search('sites', ['slug' => $routeParams['site-slug']])->getContent();
+                $getSearchFormForSite = $this->getServiceLocator()->get('ViewHelperManager')->get('getSearchFormForSite');
+                foreach ($sites as $site) {
+                    if ($getSearchFormForSite($site)) {
+                        return true;
+                    }
                 }
             }
-          }
         }
-      }
-      return false;
+        return false;
     }
 }
