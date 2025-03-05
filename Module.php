@@ -161,18 +161,20 @@ class Module extends AbstractModule
 
         $routeMatch = $this->getServiceLocator()->get('Application')
             ->getMvcEvent()->getRouteMatch();
-        $routeMatchParams = $routeMatch->getParams();
         //setup the route params to pass to the Url helper. Both the route name and its parameters go here
         $routeParams = [
             'action' => 'browse',
         ];
+        $viewHelperManager = $this->getServiceLocator()->get('ViewHelperManager');
+        $url = $viewHelperManager->get('Url');
+        $escape = $viewHelperManager->get('escapeHtml');
+        $api = $viewHelperManager->get('api');
         if ($routeMatch->getParam('__ADMIN__')) {
             $isSite = false;
             $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
             if ($globalSettings->get('metadata_browse_use_globals')) {
                 $filteredPropertyIds = $globalSettings->get('metadata_browse_properties', []);
             } else {
-                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
                 $sites = $api->search('sites', [])->getContent();
                 $siteSettings = $this->getServiceLocator()->get('Omeka\Settings\Site');
                 $filteredPropertyIds = [];
@@ -195,8 +197,6 @@ class Module extends AbstractModule
             return;
         }
 
-        $url = $this->getServiceLocator()->get('ViewHelperManager')->get('Url');
-        $escape = $this->getServiceLocator()->get('ViewHelperManager')->get('escapeHtml');
         if (in_array($propertyId, $filteredPropertyIds)) {
             // Only apply links to Rights fields that are uri's, so descriptive rights fields are not searchable
             if (($propertyTerm == "dcterms:rights") && ($target->type() == "literal")) {
@@ -219,12 +219,12 @@ class Module extends AbstractModule
                 case 'uri':
                     $searchTarget = $target->uri();
                     $label = $target->value();
-                    $searchUrl = $this->uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label, $isSite);
+                    $searchUrl = $this->uriSearchUrl($url, $api, $routeParams, $propertyId, $propertyTerm, $searchTarget, $label, $isSite);
                     $isURI = true;
                     break;
                 case 'literal':
                     $searchTarget = $target->value();
-                    $searchUrl = $this->literalSearchUrl($url, $routeParams, $propertyId, $searchTarget, $isSite);
+                    $searchUrl = $this->literalSearchUrl($url, $api, $routeParams, $propertyId, $propertyTerm, $searchTarget, $isSite);
                     $isLiteral = true;
                     break;
                 default:
@@ -236,11 +236,11 @@ class Module extends AbstractModule
                     } elseif ($uri) {
                         $searchTarget = $target->uri();
                         $label = $target->value();
-                        $searchUrl = $this->uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label, $isSite);
+                        $searchUrl = $this->uriSearchUrl($url, $api, $routeParams, $propertyId, $propertyTerm, $searchTarget, $label, $isSite);
                         $isURI = true;
                     } else {
                         $searchTarget = $target->value();
-                        $searchUrl = $this->literalSearchUrl($url, $routeParams, $propertyId, $searchTarget, $isSite);
+                        $searchUrl = $this->literalSearchUrl($url, $api, $routeParams, $propertyId, $propertyTerm, $searchTarget, $isSite);
                         $isLiteral = true;
                     }
             }
@@ -305,12 +305,11 @@ class Module extends AbstractModule
         }
     }
 
-    protected function literalSearchUrl($url, $routeParams, $propertyId, $searchTarget, $isSite = "")
+    protected function literalSearchUrl($url, $api, $routeParams, $propertyId, $propertyTerm, $searchTarget, $isSite = "")
     {
         //Check if Solr Search is installed and if this is a request from a site
-        if ($isSite && $this->checkSolr($routeParams)) {
-            $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'suggester' => 'true']], true);
-            return $searchUrl;
+        if ($isSite && ($solrURL = $this->getSolrURL($url, $api, $routeParams['site-slug'], $propertyTerm, $searchTarget))) {
+            return $solrURL;
         } else {
             $searchUrl = $url(
                 $routeParams['route'],
@@ -327,16 +326,13 @@ class Module extends AbstractModule
 
             return $searchUrl;
         }
-
-
     }
 
-    protected function uriSearchUrl($url, $routeParams, $propertyId, $searchTarget, $label = "", $isSite = "")
+    protected function uriSearchUrl($url, $api, $routeParams, $propertyId, $propertyTerm, $searchTarget, $label = "", $isSite = "")
     {
         //Check if Solr Search is installed and if this is a request from a site
-        if ($isSite && $this->checkSolr($routeParams)) {
-            $searchUrl = $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'label' => $label, 'suggester' => 'true']], true);
-            return $searchUrl;
+        if ($isSite && ($solrURL = $this->getSolrURL($url, $api, $routeParams['site-slug'], $propertyTerm, $label))) {
+            return $solrURL;
         } else {
             $searchUrl = $url(
                 $routeParams['route'],
@@ -354,8 +350,6 @@ class Module extends AbstractModule
 
             return $searchUrl;
         }
-
-
     }
 
     protected function resourceSearchUrl($url, $routeParams, $propertyId, $searchTarget)
@@ -375,21 +369,32 @@ class Module extends AbstractModule
 
         return $searchUrl;
     }
-    protected function checkSolr($routeParams)
+    protected function getSolrURL($url, $api, $siteSlug, $propertyTerm, $searchTarget)
     {
-        // check if solr is installed
-        if ($this->getServiceLocator()->get('ViewHelperManager')->has('getSearchFormForSite')) {
-            if ($routeParams['site-slug']) {
-                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-                $sites = $api->search('sites', ['slug' => $routeParams['site-slug']])->getContent();
-                $getSearchFormForSite = $this->getServiceLocator()->get('ViewHelperManager')->get('getSearchFormForSite');
-                foreach ($sites as $site) {
-                    if ($getSearchFormForSite($site)) {
-                        return true;
-                    }
+        $thissearchPage = null;
+        $searchPages = $api->search('search_pages')->getContent();
+        $currentSite = $api->searchOne('sites', ['slug' => $siteSlug])->getContent();
+        if ($searchPages && $currentSite) {
+            $currentSiteID = $currentSite->id();
+            foreach ($searchPages as $searchPage) {
+                if (array_key_exists('site', $searchPage->settings()) && ($currentSiteID == $searchPage->settings()['site'])) {
+                    $thissearchPage = $searchPage;
                 }
             }
+            if ($thissearchPage) {
+                $settings = $thissearchPage->settings();
+                if (array_key_exists('facets', $settings)) {
+                    if (array_search(str_replace(':', '_', $propertyTerm), array_column($settings['facets'], 'name'))) {
+                        // Check for exception of dcterms:contributors that do not facet names that begin with Fashion Institute of Technology
+                        if (!(str_starts_with(strtolower($searchTarget), strtolower("Fashion Institute of Technology")) && ($propertyTerm == 'dcterms:contributor'))) {
+                            return $url('site/search', ['site-slug' => $siteSlug], ['query' => ['limit' => [str_replace(':', '_', $propertyTerm) => [$searchTarget]]]]);
+                        }
+                    }
+                }
+                // if there isn't a facet match, just do a general solr query
+                return $url('site/search', ['__NAMESPACE__' => 'Search\Controller', 'controller' => 'index', 'action' => 'search'], ['query' => ['q' => '"' . addslashes($searchTarget) . '"', 'suggester' => 'true']], true);
+            }
         }
-        return false;
+        return null;
     }
 }
