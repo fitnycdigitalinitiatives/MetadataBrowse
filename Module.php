@@ -266,7 +266,7 @@ class Module extends AbstractModule
                 $uri = $target->uri();
                 $uriLabel = $target->value();
                 if (filter_var($uri, FILTER_VALIDATE_URL)) {
-                    if (!$uriLabel) {
+                    if (!$uriLabel || ($isSite && (str_contains($uri, "id.loc.gov/authorities") || str_contains($uri, "vocab.getty.edu/aat") || str_contains($uri, "vocab.getty.edu/page") || str_contains($uri, "getty.edu/vow")))) {
                         $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
                     } else {
                         $link = $escape($uriLabel) . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>
