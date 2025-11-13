@@ -34,6 +34,10 @@ a.metadata-browse-link {
   display: block !important;
 }
 
+a.metadata-browse-direct-link:has(.color-swatch) {
+  margin-left: 0;
+}
+
 a.metadata-browse-direct-link {
   margin-left: .5em;
 }

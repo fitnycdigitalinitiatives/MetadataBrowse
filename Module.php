@@ -259,8 +259,11 @@ class Module extends AbstractModule
             $searchUrl = $escape($searchUrl);
             $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
             if ($globalSettings->get('metadata_browse_direct_links') && $isLiteral == true) {
-                $cleanedValue = nl2br($escape($target->value()));
-                $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
+                if ($isSite && (($propertyTerm == "fitcore:colorpalette") || ($propertyTerm == "fitcore:predominantcolor")) && preg_match('/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $target->value())) {
+                    $link = "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'>" . $target->value() . "</a>";
+                } else {
+                    $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
+                }
                 $event->setParam('html', $link);
             } elseif ($globalSettings->get('metadata_browse_direct_links') && $isURI == true) {
                 $uri = $target->uri();
