@@ -262,7 +262,8 @@ class Module extends AbstractModule
                 if ($isSite && (($propertyTerm == "fitcore:colorpalette") || ($propertyTerm == "fitcore:predominantcolor")) && preg_match('/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $target->value())) {
                     $link = "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'>" . $target->value() . "</a>";
                 } else {
-                    $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
+                    $ariaLabel = 'Search for the term, ' . $escape($searchTarget);
+                    $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='$ariaLabel'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
                 }
                 $event->setParam('html', $link);
             } elseif ($globalSettings->get('metadata_browse_direct_links') && $isURI == true) {
@@ -270,9 +271,14 @@ class Module extends AbstractModule
                 $uriLabel = $target->value();
                 if (filter_var($uri, FILTER_VALIDATE_URL)) {
                     if (!$uriLabel || ($isSite && (str_contains($uri, "id.loc.gov/authorities") || str_contains($uri, "vocab.getty.edu/aat") || str_contains($uri, "vocab.getty.edu/page") || str_contains($uri, "getty.edu/vow")))) {
-                        $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
+                        $ariaLabel = "Search by this term";
+                        if ($uriLabel) {
+                            $ariaLabel = 'Search for the term, ' . $escape($uriLabel);
+                        }
+                        $link = $html . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='$ariaLabel'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>";
                     } else {
-                        $link = $escape($uriLabel) . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='Search by this term'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>
+                        $ariaLabel = 'Search for the term, ' . $escape($uriLabel);
+                        $link = $escape($uriLabel) . "<a class='metadata-browse-direct-link' href='$searchUrl' aria-label='$ariaLabel'><i class='fas fa-search' title='Search by this term' aria-hidden='true'></i></a>
                       <a class='uri-value-link info' target='_blank' href='$uri' aria-label='Source URI'><i class='fas fa-info-circle' title='Source URI'  aria-hidden='true'></i></a>";
                     }
                 } else {
